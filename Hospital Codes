@@ -1,0 +1,267 @@
+-- Create the database
+CREATE DATABASE HospitalDB;
+USE HospitalDB;
+
+-- Create the tables with NOT NULL constraints
+CREATE TABLE Patient (
+    PatientID VARCHAR(10) PRIMARY KEY NOT NULL,
+    PatientName VARCHAR(100) NOT NULL,
+    DOB DATE NOT NULL,
+    Gender VARCHAR(10) NOT NULL,
+    Address VARCHAR(255) NOT NULL,
+    ContactNumber VARCHAR(15) NOT NULL
+);
+
+CREATE TABLE Doctor (
+    DoctorID VARCHAR(10) PRIMARY KEY NOT NULL,
+    DoctorName VARCHAR(100) NOT NULL,
+    Specialty VARCHAR(100) NOT NULL,
+    ContactNumber VARCHAR(15) NOT NULL
+);
+
+CREATE TABLE Appointment (
+    AppointmentID VARCHAR(15) PRIMARY KEY NOT NULL,
+    PatientID VARCHAR(10) NOT NULL,
+    DoctorID VARCHAR(10) NOT NULL,
+    AppointmentDate DATE NOT NULL,
+    AppointmentTime TIME NOT NULL,
+    Reason VARCHAR(255) NOT NULL,
+    FOREIGN KEY (PatientID) REFERENCES Patient(PatientID),
+    FOREIGN KEY (DoctorID) REFERENCES Doctor(DoctorID)
+);
+
+CREATE TABLE Treatment (
+    TreatmentID VARCHAR(10) PRIMARY KEY NOT NULL,
+    TreatmentName VARCHAR(100) NOT NULL,
+    TreatmentCost DECIMAL(10, 2) NOT NULL
+);
+
+CREATE TABLE Prescription (
+    PrescriptionID VARCHAR(10) PRIMARY KEY NOT NULL,
+    PatientID VARCHAR(10) NOT NULL,
+    DoctorID VARCHAR(10) NOT NULL,
+    MedicineName VARCHAR(100) NOT NULL,
+    Dosage VARCHAR(50) NOT NULL,
+    StartDate DATE NOT NULL,
+    EndDate DATE NOT NULL,
+    FOREIGN KEY (PatientID) REFERENCES Patient(PatientID),
+    FOREIGN KEY (DoctorID) REFERENCES Doctor(DoctorID)
+);
+
+CREATE TABLE PatientTreatment (
+    PatientID VARCHAR(10) NOT NULL,
+    TreatmentID VARCHAR(10) NOT NULL,
+    PRIMARY KEY (PatientID, TreatmentID),
+    FOREIGN KEY (PatientID) REFERENCES Patient(PatientID),
+    FOREIGN KEY (TreatmentID) REFERENCES Treatment(TreatmentID)
+);
+
+-- Insert sample data points
+INSERT INTO Patient (PatientID, PatientName, DOB, Gender, Address, ContactNumber)
+VALUES 
+('P001', 'John Doe', '1985-05-12', 'M', '123 Elm St', '+91-9876543210'),
+('P002', 'Jane Smith', '1990-07-23', 'F', '456 Oak Ave', '+91-9876543211'),
+('P003', 'Alice Johnson', '1975-02-15', 'F', '789 Pine Rd', '+91-9876543212'),
+('P004', 'Bob Brown', '2000-10-10', 'M', '321 Maple Blvd', '+91-9876543213');
+
+INSERT INTO Doctor (DoctorID, DoctorName, Specialty, ContactNumber)
+VALUES 
+('D001', 'Dr. Adams', 'Cardiology', '+91-9876543214'),
+('D002', 'Dr. Brown', 'Neurology', '+91-9876543215'),
+('D003', 'Dr. Clark', 'Orthopedics', '+91-9876543216'),
+('D004', 'Dr. Davis', 'Pediatrics', '+91-9876543217');
+
+INSERT INTO Appointment (AppointmentID, PatientID, DoctorID, AppointmentDate, AppointmentTime, Reason)
+VALUES 
+('JDDA001', 'P001', 'D001', '2024-08-01', '09:00', 'Routine Checkup'),
+('JSDB002', 'P002', 'D002', '2024-08-02', '10:30', 'Headache'),
+('AJDC003', 'P003', 'D003', '2024-08-03', '11:00', 'Knee Pain'),
+('BBDD004', 'P004', 'D004', '2024-08-04', '13:00', 'Child Checkup');
+
+INSERT INTO Treatment (TreatmentID, TreatmentName, TreatmentCost)
+VALUES 
+('TREAT001', 'Surgery', 5000.00),
+('TREAT002', 'Therapy', 2000.00),
+('TREAT003', 'Medication', 150.00),
+('TREAT004', 'X-Ray', 300.00);
+
+INSERT INTO Prescription (PrescriptionID, PatientID, DoctorID, MedicineName, Dosage, StartDate, EndDate)
+VALUES 
+('PREP001', 'P001', 'D001', 'Med1', '10mg', '2024-08-01', '2024-08-10'),
+('PREP002', 'P002', 'D002', 'Med2', '5mg', '2024-08-02', '2024-08-12'),
+('PREP003', 'P003', 'D003', 'Med3', '20mg', '2024-08-03', '2024-08-15'),
+('PREP004', 'P004', 'D004', 'Med4', '15mg', '2024-08-04', '2024-08-20');
+
+INSERT INTO PatientTreatment (PatientID, TreatmentID)
+VALUES 
+('P001', 'TREAT001'),
+('P002', 'TREAT002'),
+('P003', 'TREAT003'),
+('P004', 'TREAT004');
+
+-- Data Access Language
+-- 1.Patient Management Department
+
+-- Select All Patients
+SELECT * FROM Patient;
+
+-- Select a Specific Patient by ID
+SELECT * FROM Patient WHERE PatientID = 'P001';
+
+-- Update Patient Information
+UPDATE Patient
+SET 
+    PatientName = 'Updated Name',
+    DOB = '1985-01-01',
+    Gender = 'M',
+    Address = 'New Address',
+    ContactNumber = '+91-9999999999'
+WHERE 
+    PatientID = 'P001';
+
+-- Insert New Patient
+INSERT INTO Patient (PatientID, PatientName, DOB, Gender, Address, ContactNumber)
+VALUES ('P005', 'New Patient', '1995-09-15', 'F', 'New Address', '+91-9876543214');
+
+-- Delete a Patient Record
+DELETE FROM Patient WHERE PatientID = 'P005';
+
+
+-- 2. Doctor/Staff Management Department
+-- Select All Doctors with a Specific Specialty
+SELECT DoctorID, DoctorName, Specialty, ContactNumber
+FROM Doctor
+WHERE Specialty = 'Cardiology';
+
+
+-- Select Doctors and Count the Number of Patients Assigned
+SELECT d.DoctorID, d.DoctorName, d.Specialty, COUNT(a.PatientID) AS NumberOfPatients
+FROM Doctor d
+LEFT JOIN Appointment a ON d.DoctorID = a.DoctorID
+GROUP BY d.DoctorID, d.DoctorName, d.Specialty;
+
+-- Update Doctor's Contact Information Using a Subquery
+UPDATE Doctor
+SET ContactNumber = '+91-9999999999'
+WHERE DoctorID = (
+    SELECT DoctorID 
+    FROM Doctor 
+    WHERE ContactNumber = '+91-9876543215'
+);
+
+
+-- Insert a New Doctor Profile
+INSERT INTO Doctor (DoctorID, DoctorName, Specialty, ContactNumber)
+VALUES ('D005', 'Dr. Evans', 'Dermatology', '+91-9876543218');
+
+
+-- Delete a Doctor Profile if No Appointments Exist
+DELETE FROM Doctor
+WHERE DoctorID = 'D005'
+AND NOT EXISTS (
+    SELECT 1 
+    FROM Appointment 
+    WHERE DoctorID = 'D005'
+);
+
+
+-- 3. Appointments Department
+-- Select All Appointments for a Specific Date
+SELECT AppointmentID, PatientID, DoctorID, AppointmentTime, Reason
+FROM Appointment
+WHERE AppointmentDate = '2024-08-01';
+
+
+-- Select Upcoming Appointments with Patient and Doctor Details
+SELECT a.AppointmentID, a.AppointmentDate, a.AppointmentTime, p.PatientName, d.DoctorName, a.Reason
+FROM Appointment a
+JOIN Patient p ON a.PatientID = p.PatientID
+JOIN Doctor d ON a.DoctorID = d.DoctorID
+WHERE a.AppointmentDate >= CURRENT_DATE
+ORDER BY a.AppointmentDate, a.AppointmentTime;
+
+
+-- Insert a New Appointment
+INSERT INTO Appointment (AppointmentID, PatientID, DoctorID, AppointmentDate, AppointmentTime, Reason)
+VALUES ('BBDB005', 'P002', 'D001', '2024-08-06', '15:30', 'Follow-up Checkup');
+
+
+-- Cancel an Appointment Using a Conditional Delete
+DELETE FROM Appointment
+WHERE AppointmentID = 'BBDB005'
+AND AppointmentDate > CURRENT_DATE;
+
+
+-- 4. Treatment Management Department
+-- Select All Treatment Types with Costs
+SELECT TreatmentID, TreatmentName, TreatmentCost
+FROM Treatment;
+
+
+-- Select Patients Assigned to a Specific Treatment
+SELECT pt.PatientID, p.PatientName, t.TreatmentName, t.TreatmentCost
+FROM PatientTreatment pt
+JOIN Patient p ON pt.PatientID = p.PatientID
+JOIN Treatment t ON pt.TreatmentID = t.TreatmentID
+WHERE t.TreatmentID = 'TREAT002';
+
+
+-- Update Treatment Cost Based on Treatment Name
+UPDATE Treatment
+SET TreatmentCost = 5500.00
+WHERE TreatmentName = 'Surgery';
+
+
+-- Insert a New Treatment Type
+INSERT INTO Treatment (TreatmentID, TreatmentName, TreatmentCost)
+VALUES ('TREAT005', 'Physical Therapy', 2500.00);
+
+
+-- Assign a Treatment to a Patient Using a Subquery
+INSERT INTO PatientTreatment (PatientID, TreatmentID)
+SELECT 'P002', 'TREAT005'
+FROM Treatment
+WHERE TreatmentID = 'TREAT005';
+
+
+-- Delete a Patient's Treatment Assignment
+DELETE FROM PatientTreatment
+WHERE PatientID = 'P003'
+AND TreatmentID = 'TREAT003';
+
+
+-- 5. Pharmacy Department
+-- Select All Prescriptions by a Specific Doctor
+SELECT PrescriptionID, PatientID, MedicineName, Dosage, StartDate, EndDate
+FROM Prescription
+WHERE DoctorID = 'D001';
+
+
+-- Select Current Prescriptions for a Specific Patient
+SELECT PrescriptionID, MedicineName, Dosage, StartDate, EndDate
+FROM Prescription
+WHERE PatientID = 'P002'
+AND CURRENT_DATE BETWEEN StartDate AND EndDate;
+
+
+-- Update Dosage for a Specific Prescription
+UPDATE Prescription
+SET Dosage = '15mg'
+WHERE PrescriptionID = 'PREP001';
+
+
+-- Insert a New Prescription Record
+INSERT INTO Prescription (PrescriptionID, PatientID, DoctorID, MedicineName, Dosage, StartDate, EndDate)
+VALUES ('PREP005', 'P003', 'D002', 'Med5', '10mg', '2024-08-05', '2024-08-15');
+
+
+-- Delete Expired Prescriptions
+DELETE FROM Prescription
+WHERE EndDate < CURRENT_DATE;
+
+
+-- Select Prescriptions and Group by Medicine Name
+SELECT MedicineName, COUNT(PrescriptionID) AS NumberOfPrescriptions
+FROM Prescription
+GROUP BY MedicineName
+ORDER BY NumberOfPrescriptions DESC;
